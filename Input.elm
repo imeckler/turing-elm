@@ -12,6 +12,16 @@ diff f b s =
     s
   |> Signal.map snd
 
+mousePosOnClick : Signal (Int, Int)
+mousePosOnClick = Signal.sampleOn Mouse.clicks Mouse.position
+
+{-
+pans =
+  Signal.map2 (\(downX, downY) (currX, currY) -> (currX - downX, currY - downY))
+    mousePosOnClick Mouse.position
+  |> Signal.keepWhen Mouse.isDown (0, 0)
+-}
+
 pans : Signal (Int, Int)
 pans =
   Signal.keepWhen Mouse.isDown (0,0)

@@ -1,5 +1,9 @@
 module Machine where
 
+import Basics
+import List
+import Json.Encode
+import Json.Decode
 import Random
 import Dict
 import Maybe
@@ -74,4 +78,54 @@ step tm {board,pos,state} =
     Just rs ->
       let (dir, state', a') = access (Maybe.withDefault O (Dict.get pos board)) rs
       in {board = Dict.insert pos a' board, state = state', pos = move dir pos}
+
+maybeMap3 f x y z = case x y z of
+  (Just a, Just b, Just c) -> Just (f a b c)
+  _                        -> Nothing
+
+toString : TM -> String
+toString = Json.Encode.encode 0 << encodeTM
+
+fromString : String -> Result String TM
+fromString = Json.Decode.decodeString decodeTM
+
+encodeTM : TM -> Json.Encode.Value
+encodeTM = Json.Encode.array << Array.map encodeRulesForState
+
+encodeRulesForState : RulesForState -> Json.Encode.Value
+encodeRulesForState (a,b,c,d,e,f) = Json.Encode.list (List.map encodeRule [a,b,c,d,e,f])
+
+encodeRule : (Dir, State, Alphabet) -> Json.Encode.Value
+encodeRule (d, s, a) = Json.Encode.list
+  [ Json.Encode.string (Basics.toString d)
+  , Json.Encode.int s
+  , Json.Encode.string (Basics.toString a)
+  ]
+
+decodeTM : Json.Decode.Decoder TM
+decodeTM = Json.Decode.array decodeRulesForState
+
+decodeRulesForState : Json.Decode.Decoder RulesForState
+decodeRulesForState = Json.Decode.tuple6 (\a b c d e f -> (a,b,c,d,e,f))
+  decodeRule decodeRule decodeRule decodeRule decodeRule decodeRule 
+
+decodeRule : Json.Decode.Decoder Rule
+decodeRule = Json.Decode.tuple3 (\d s a -> (d,s,a)) decodeDir Json.Decode.int decodeAlphabet
+
+decodeDir : Json.Decode.Decoder Dir
+decodeDir = Json.Decode.string `Json.Decode.andThen` \s -> case s of
+  "U" -> Json.Decode.succeed U
+  "D" -> Json.Decode.succeed D
+  "L" -> Json.Decode.succeed L
+  "R" -> Json.Decode.succeed R
+  _   -> Json.Decode.fail "Expected Dir"
+
+decodeAlphabet : Json.Decode.Decoder Alphabet
+decodeAlphabet = Json.Decode.string `Json.Decode.andThen` \s -> case s of
+  "O"  -> Json.Decode.succeed O
+  "X"  -> Json.Decode.succeed X
+  "A1" -> Json.Decode.succeed A1
+  "A2" -> Json.Decode.succeed A2
+  "A3" -> Json.Decode.succeed A3
+  "A4" -> Json.Decode.succeed A4
 
