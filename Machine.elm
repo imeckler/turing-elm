@@ -1,7 +1,11 @@
+module Machine where
+
 import Random
 import Dict
+import Maybe
+import Array
 
-data Alphabet = O | X | A1 | A2 | A3 | A4
+type Alphabet = O | X | A1 | A2 | A3 | A4
 
 type alias AlphabetsWorth a = (a,a,a,a,a,a)
 access : Alphabet -> AlphabetsWorth a -> a
@@ -32,11 +36,11 @@ intToDir n = case n of
 type alias State         = Int
 type alias Rule          = (Dir, State, Alphabet)
 type alias RulesForState = AlphabetsWorth Rule
-type alias TM            = Array RulesForState
+type alias TM            = Array.Array RulesForState
 
 type Dir = U | D | L | R
 
-type Board = Dict.Dict (Int, Int) Alphabet
+type alias Board = Dict.Dict (Int, Int) Alphabet
 
 move m (x, y) = case m of
   U -> (x, y + 1)
@@ -46,9 +50,9 @@ move m (x, y) = case m of
 
 randomRule : Int -> Random.Generator Rule
 randomRule n = Random.customGenerator (\s ->
-  let (i_d, s')   = Random.generate (Random.int 0 4)  s
+  let (i_d, s')   = Random.generate (Random.int 0 3)  s
       (i_s, s'')  = Random.generate (Random.int 0 (n - 1)) s'
-      (i_a, s''') = Random.generate (Random.int 0 6) s''
+      (i_a, s''') = Random.generate (Random.int 0 5) s''
   in
   ((intToDir i_d, i_s, intToAlphabet i_a), s'''))
 
@@ -59,10 +63,10 @@ randomRulesForState n = Random.customGenerator (\s ->
 
 randomTM n =
   Random.customGenerator (\s ->
-    let (rs, s') = Random.generate (list n (randomRulesForState n)) s in
+    let (rs, s') = Random.generate (Random.list n (randomRulesForState n)) s in
     (Array.fromList rs, s'))
 
-type TMState = {board : Board, state : State, pos : (Int, Int)}
+type alias TMState = {board : Board, state : State, pos : (Int, Int)}
 
 step : TM -> TMState -> TMState
 step tm {board,pos,state} = 
